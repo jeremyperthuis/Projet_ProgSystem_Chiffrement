@@ -8,18 +8,14 @@
 #include <fcntl.h>
 
 
-
-
-
-
-TABinfo decoupage(char* argv)
+TABinfo decoupage(char* argv, int* nb_msg)
 {
 	/*On recupere l'index dans un buffer*/
-	char buf[NB_MAX_FICHIERS*64];
+	char buf[MAX_FICHIERS*64];
 	int fd1=open(argv,O_RDONLY);
-	read(fd1,&buf,NB_MAX_FICHIERS*64);
+	read(fd1,&buf,MAX_FICHIERS*64);
 	
-	TABinfo tab;
+	TABinfo temp;
 	
 	char c;
 	
@@ -31,41 +27,60 @@ TABinfo decoupage(char* argv)
 		{	
 			i++;
 			
-			tab.Inf[nb].path[j]='\0';
+			temp.Inf[nb].path[j]='\0';
 			j=0;
 
  			while((c=buf[i])!=';') 
  			{
- 				tab.Inf[nb].decalage[j]=c;
+ 				temp.Inf[nb].decalage[j]=c;
  				j++;
  				i++;
  			}
- 			tab.Inf[nb].decalage[j]='\0';
+
+ 			temp.Inf[nb].decalage[j]='\0';
  			i++;
  			c=buf[i];
- 			tab.Inf[nb].sens=c;
+ 			temp.Inf[nb].sens=c;
  			i+=2;
  			nb++;
  			j=0;
  			c=buf[i];
 		}
 
-		
-		tab.Inf[nb].path[j]=c;
+		temp.Inf[nb].path[j]=c;
 		j++;
 		i++;
 	}
-	printf("tab[0].path: %s\n",tab.Inf[0].path);
-	printf("tab[0].decalage: %s\n",tab.Inf[0].decalage);
-	printf("tab[0].sens: %c\n",tab.Inf[0].sens);
-	
-	printf("tab[1].path: %s\n",tab.Inf[1].path);
-	printf("tab[1].decalage: %s\n",tab.Inf[1].decalage);
-	printf("tab[1].sens: %c\n",tab.Inf[1].sens);
-
-	printf("tab[2].path: %s\n",tab.Inf[2].path);
-	printf("tab[2].decalage: %s\n",tab.Inf[2].decalage);
-	printf("tab[2].sens: %c\n",tab.Inf[2].sens);
-	
-	return tab;
+	*nb_msg=nb;
+	return temp;
 }
+
+/* Permet d'afficher le contenu de la structure TABinfo */
+void printTABinfo(TABinfo cc, int nb_msg)
+{
+	for(int i=0;i<nb_msg;i++)
+	{
+		printf("TABinfo[%d].path: %s\n",i,cc.Inf[0].path);
+		printf("TABinfo[%d].decalage: %s\n",i,cc.Inf[i].decalage);
+		printf("TABinfo[%d].sens: %c\n\n",i,cc.Inf[i].sens);
+		
+	}
+}
+
+void creation_processus(int nb_msg)
+{
+	pid_t pid, status;
+	
+	for(int i =0;i<nb_msg;i++)
+	{
+		pid=fork();
+		if(pid==-1) exit(0);
+		if(pid==0) 
+		{
+			printf("on est dans le fils\n");
+			exit(getpid()%10);
+		}
+	}
+}
+
+

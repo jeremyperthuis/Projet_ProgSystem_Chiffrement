@@ -7,15 +7,16 @@
 #include <fcntl.h>
 #include "director.h"
 
-#define NB_MAX_FICHIERS 32
+
 
 
 
 int main(int argc, char* argv[])
 {
-	TABinfo cc= decoupage(argv[1]);
-	printf("bonjour\n");
-
-	printf("cc[0].path: %s\n",cc.Inf[0].path);
+	int nombre_msg;
+	TABinfo t = decoupage(argv[1],&nombre_msg);
+	printf("nombre message :%d\n",nombre_msg);
+	printTABinfo(t,nombre_msg);
+	creation_processus(nombre_msg);
 
 }
