@@ -1,17 +1,26 @@
 
 /* Nombre de fichiers max pouvant etre géré par le programme */
 #define MAX_FICHIERS 32
+/* Nombe de caractere max par fichiers */
+#define MAX_CARACTERE 1024
 
 
 typedef struct info{
 	char path[256];
 	char decalage[16];
 	char sens;
+	char message[MAX_CARACTERE];
 }INFO;
 
 typedef struct TABinfo{
 	INFO Inf[MAX_FICHIERS];
 }TABinfo;
+
+typedef struct mot{
+	char w[64];
+} mot;
+
+
 
 
 
@@ -24,4 +33,12 @@ TABinfo decoupage(char* argv,int* nb_msg);
 void printTABinfo(TABinfo cc, int nb_msg);
 
 /* Crée nb_msg processus */
-void creation_processus(int nb_msg);
+void creation_processus(TABinfo t, int nb_msg);
+
+/* Recupere les messages des fichiers et les copie dans la structure TABinfo*/
+TABinfo recupere_message(TABinfo t, int nb_msg);
+
+/* Exemple avec une fonction de test*/
+void creation_thread();
+
+void *fonction1(void *arg);

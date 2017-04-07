@@ -15,8 +15,10 @@ int main(int argc, char* argv[])
 {
 	int nombre_msg;
 	TABinfo t = decoupage(argv[1],&nombre_msg);
-	printf("nombre message :%d\n",nombre_msg);
+	t=recupere_message(t,nombre_msg);
+	printf("\nnombre message :%d\n",nombre_msg);
 	printTABinfo(t,nombre_msg);
-	creation_processus(nombre_msg);
+	creation_processus(t,nombre_msg);
+	creation_thread();
 
 }

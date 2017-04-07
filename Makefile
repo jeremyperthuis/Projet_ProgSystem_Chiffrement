@@ -2,7 +2,7 @@
 all: prog
 
 prog: director.o main.o
-	gcc -o prog director.o main.o
+	gcc -o prog director.o main.o -lpthread
 
 director.o: director.c
 	gcc -o director.o -c director.c
