@@ -129,6 +129,7 @@ void *encrypt(void *arg)
 
 void creation_thread(TABinfo* t)
 {
+	int pouf;
 	int i=0;
 	int nb_thread=t->Inf[0].decalage;
 	while(t->Inf[0].message[i]!='\0')
