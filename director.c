@@ -20,6 +20,7 @@ TABinfo decoupage(char* argv, int* nb_msg)
 	TABinfo temp;
 	
 	char c;
+	char decaltemp[16];
 	
 	int i=0, j=0, nb=0;
 	
@@ -34,12 +35,13 @@ TABinfo decoupage(char* argv, int* nb_msg)
 
  			while((c=buf[i])!=';') 
  			{
- 				temp.Inf[nb].decalage[j]=c;
+ 				decaltemp[j]=c;
  				j++;
  				i++;
  			}
 
- 			temp.Inf[nb].decalage[j]='\0';
+ 			decaltemp[j]='\0';
+ 			temp.Inf[nb].decalage=atoi(decaltemp);
  			i++;
  			c=buf[i];
  			temp.Inf[nb].sens=c;
@@ -63,7 +65,7 @@ void printTABinfo(TABinfo cc, int nb_msg)
 	for(int i=0;i<nb_msg;i++)
 	{
 		printf("TABinfo[%d].path: %s\n",i,cc.Inf[0].path);
-		printf("TABinfo[%d].decalage: %s\n",i,cc.Inf[i].decalage);
+		printf("TABinfo[%d].decalage: %d\n",i,cc.Inf[i].decalage);
 		printf("TABinfo[%d].sens: %c\n",i,cc.Inf[i].sens);
 		printf("TABinfo[%d].message: %s\n\n",i,cc.Inf[i].message);
 		
@@ -112,19 +114,45 @@ TABinfo recupere_message(TABinfo t, int nb_msg)
 	return t;
 }
 
-void *fonction1(void *arg)
+void *encrypt(void *arg)
 {
-	printf("On est dans thread1\n");
-	printf("%d\n",*(int*) arg);  
+	printf("On est dans encrypt\n");
+	while((*(char*)arg>=65 && *(char*)arg<=90) || (*(char*)arg>=97 && *(char*)arg<=122))
+	{
+		*(char*) arg+=3;
+		arg++;
+	}
+
 	pthread_exit(NULL);
 }
 
 
-void creation_thread()
+void creation_thread(TABinfo* t)
 {
-	int* a = malloc(sizeof(int));
-        *a = 34;
-	pthread_t mythread;
-	pthread_create(&mythread, NULL,fonction1,a);
-	pthread_join(mythread,NULL);
+	int i=0;
+	int nb_thread=t->Inf[0].decalage;
+	while(t->Inf[0].message[i]!='\0')
+	{
+		printf("i=%d\n",i);
+		int sym = t->Inf[0].message[i];
+
+		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122)) // si c'est une lettre
+		{
+			pthread_t mythread;
+			pthread_create(&mythread, NULL,encrypt,&t->Inf[0].message[i]);
+			pthread_join(mythread,NULL);
+
+			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
+			{
+
+				i++;
+				sym = t->Inf[0].message[i];
+			}
+			printf("fin while\n");
+		}
+
+		else
+			i++;
+	
+	}
 }

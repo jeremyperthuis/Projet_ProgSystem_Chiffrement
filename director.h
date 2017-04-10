@@ -7,9 +7,10 @@
 
 typedef struct info{
 	char path[256];
-	char decalage[16];
+	int decalage;
 	char sens;
 	char message[MAX_CARACTERE];
+	int position;
 }INFO;
 
 typedef struct TABinfo{
@@ -39,6 +40,6 @@ void creation_processus(TABinfo t, int nb_msg);
 TABinfo recupere_message(TABinfo t, int nb_msg);
 
 /* Exemple avec une fonction de test*/
-void creation_thread();
+void creation_thread(TABinfo* t);
 
-void *fonction1(void *arg);
+void *encrypt(void *arg);
