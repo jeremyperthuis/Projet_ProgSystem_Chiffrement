@@ -18,8 +18,8 @@ int main(int argc, char* argv[])
 	t=recupere_message(t,nombre_msg);
 	printf("\nnombre message :%d\n",nombre_msg);
 	printTABinfo(t,nombre_msg);
-	creation_processus(t,nombre_msg);
-	creation_thread(&t);
+	creation_processus(&t,nombre_msg);
+	//creation_thread(&t);
 	printTABinfo(t,nombre_msg);
 
 return 0;

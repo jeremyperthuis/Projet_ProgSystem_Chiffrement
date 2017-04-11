@@ -34,12 +34,12 @@ TABinfo decoupage(char* argv,int* nb_msg);
 void printTABinfo(TABinfo cc, int nb_msg);
 
 /* Crée nb_msg processus */
-void creation_processus(TABinfo t, int nb_msg);
+void creation_processus(TABinfo* t, int nb_msg);
 
 /* Recupere les messages des fichiers et les copie dans la structure TABinfo*/
 TABinfo recupere_message(TABinfo t, int nb_msg);
 
 /* Exemple avec une fonction de test*/
-void creation_thread(TABinfo* t);
+void creation_thread(INFO* I);
 
 void *encrypt(void *arg);

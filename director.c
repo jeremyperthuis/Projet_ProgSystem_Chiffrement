@@ -72,7 +72,7 @@ void printTABinfo(TABinfo cc, int nb_msg)
 	}
 }
 
-void creation_processus(TABinfo t, int nb_msg)
+void creation_processus(TABinfo* t, int nb_msg)
 {
 	pid_t pid, status;
 	int i;
@@ -83,8 +83,8 @@ void creation_processus(TABinfo t, int nb_msg)
 		if(pid==-1) exit(0);
 		if(pid==0) 
 		{
-			printf("on est dans le fils\n");
-			printf("processus message:%s\n", t.Inf[i].message);
+			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
+			creation_thread(&t->Inf[i]);
 			exit(getpid());
 		}
 	}
@@ -120,6 +120,7 @@ void *encrypt(void *arg)
 	while((*(char*)arg>=65 && *(char*)arg<=90) || (*(char*)arg>=97 && *(char*)arg<=122))
 	{
 		*(char*) arg+=3;
+		printf("%c",*(char*)arg);
 		arg++;
 	}
 
@@ -127,29 +128,28 @@ void *encrypt(void *arg)
 }
 
 
-void creation_thread(TABinfo* t)
+void creation_thread(INFO* I)
 {
-	int pouf;
 	int i=0;
-	int nb_thread=t->Inf[0].decalage;
-	while(t->Inf[0].message[i]!='\0')
+	int nb_thread=I->decalage;
+	printf("on est dans le thread associe a %s\n",I->message);
+	while(I->message[i]!='\0')
 	{
 		printf("i=%d\n",i);
-		int sym = t->Inf[0].message[i];
+		int sym = I->message[i];
 
 		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122)) // si c'est une lettre
 		{
 			pthread_t mythread;
-			pthread_create(&mythread, NULL,encrypt,&t->Inf[0].message[i]);
+			pthread_create(&mythread, NULL,encrypt,&I->message[i]);
 			pthread_join(mythread,NULL);
 
 			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
 			{
 
 				i++;
-				sym = t->Inf[0].message[i];
+				sym = I->message[i];
 			}
-			printf("fin while\n");
 		}
 
 		else
