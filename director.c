@@ -143,12 +143,13 @@ TABinfo recupere_message(TABinfo t, int nb_msg)
 
 void *encrypt(void *arg)
 {
-	printf("On est dans encrypt\n");
-	while((*(char*)arg>=65 && *(char*)arg<=90) || (*(char*)arg>=97 && *(char*)arg<=122))
+	INFO tmp= *(INFO*)arg;
+	int pos=tmp.position;
+	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || (tmp.message[pos]>=97 && tmp.message[pos]<=122))
 	{
-		*(char*) arg+=3;
-		printf("%c",*(char*)arg);
-		arg++;
+		*(char*) arg.message[pos]+=3;
+		//printf("%c",*(char*)arg);
+		arg.message++;
 	}
 
 	pthread_exit(NULL);
@@ -158,7 +159,8 @@ void *encrypt(void *arg)
 INFO creation_thread(INFO I)
 {	
 	INFO tmp = I;
-	
+	tmp.position=0;
+	printf("position:%d\n",tmp.position);
 
 	int i=0;
 	int nb_thread=tmp.decalage;
@@ -173,7 +175,7 @@ INFO creation_thread(INFO I)
 			pthread_t mythread;
 			if(tmp.sens=='c')
 			{
-				pthread_create(&mythread, NULL,encrypt,&tmp.message[i]);
+				pthread_create(&mythread, NULL,encrypt,&tmp);
 			}
 			else if(tmp.sens=='d')
 			{
@@ -186,12 +188,14 @@ INFO creation_thread(INFO I)
 			{
 
 				i++;
+				tmp.position++;
 				sym = tmp.message[i];
 			}
 		}
 
 		else
 			i++;
+			tmp.position++;
 	
 	}
 	return tmp;
