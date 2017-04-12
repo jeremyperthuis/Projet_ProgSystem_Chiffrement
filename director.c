@@ -62,6 +62,7 @@ TABinfo decoupage(char* argv, int* nb_msg)
 
 void printTABinfo(TABinfo cc, int nb_msg)
 {
+	printf("\n******************************\n\n");
 	for(int i=0;i<nb_msg;i++)
 	{
 		printf("TABinfo[%d].path: %s\n",i,cc.Inf[0].path);
@@ -70,22 +71,47 @@ void printTABinfo(TABinfo cc, int nb_msg)
 		printf("TABinfo[%d].message: %s\n\n",i,cc.Inf[i].message);
 		
 	}
+	printf("******************************\n");
 }
 
 void creation_processus(TABinfo* t, int nb_msg)
 {
 	pid_t pid, status;
-	int i;
+	int i,j;
+	TABinfo tmp = *t;
+	INFO tmp2;
+
+	char messageRecu[MAX_CARACTERE]; 
+	int descripteurTube[2]; // parametre du pipe
+	pipe(descripteurTube);
+	
+
 	for(i =0;i<nb_msg;i++)
 	{
 
 		pid=fork();
+		
 		if(pid==-1) exit(0);
-		if(pid==0) 
+		
+		if(pid==0) // on est dans les fils
 		{
 			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
-			creation_thread(&t->Inf[i]);
+			tmp.Inf[nb_msg]=creation_thread(tmp.Inf[i]);
+			printf("messagecod: %s\n",tmp.Inf[nb_msg].message);
+			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
 			exit(getpid());
+		}
+
+		if(pid>0)
+		{
+			read(descripteurTube[0],messageRecu,MAX_CARACTERE);
+			printf("message_recu:%s\n",messageRecu);
+
+			for(j=0;j<MAX_CARACTERE;j++)
+			{
+				tmp.Inf[nb_msg].message[j]=messageRecu[j];
+			}
+			printf("tmp : %s\n",tmp.Inf[nb_msg].message);
 		}
 	}
 
@@ -93,6 +119,7 @@ void creation_processus(TABinfo* t, int nb_msg)
 	{
 		wait(&status);
 	}
+	printTABinfo(tmp,nb_msg);
 }
 
 
@@ -128,27 +155,38 @@ void *encrypt(void *arg)
 }
 
 
-void creation_thread(INFO* I)
-{
+INFO creation_thread(INFO I)
+{	
+	INFO tmp = I;
+	
+
 	int i=0;
-	int nb_thread=I->decalage;
-	printf("on est dans le thread associe a %s\n",I->message);
-	while(I->message[i]!='\0')
+	int nb_thread=tmp.decalage;
+
+	while(tmp.message[i]!='\0')
 	{
 		printf("i=%d\n",i);
-		int sym = I->message[i];
+		int sym = tmp.message[i];
 
 		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122)) // si c'est une lettre
 		{
 			pthread_t mythread;
-			pthread_create(&mythread, NULL,encrypt,&I->message[i]);
+			if(tmp.sens=='c')
+			{
+				pthread_create(&mythread, NULL,encrypt,&tmp.message[i]);
+			}
+			else if(tmp.sens=='d')
+			{
+
+			}
+				
 			pthread_join(mythread,NULL);
 
 			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
 			{
 
 				i++;
-				sym = I->message[i];
+				sym = tmp.message[i];
 			}
 		}
 
@@ -156,4 +194,5 @@ void creation_thread(INFO* I)
 			i++;
 	
 	}
+	return tmp;
 }

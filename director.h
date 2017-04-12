@@ -10,6 +10,7 @@ typedef struct info{
 	int decalage;
 	char sens;
 	char message[MAX_CARACTERE];
+	int TUBE[2];
 	int position;
 }INFO;
 
@@ -17,9 +18,6 @@ typedef struct TABinfo{
 	INFO Inf[MAX_FICHIERS];
 }TABinfo;
 
-typedef struct mot{
-	char w[64];
-} mot;
 
 
 
@@ -40,6 +38,6 @@ void creation_processus(TABinfo* t, int nb_msg);
 TABinfo recupere_message(TABinfo t, int nb_msg);
 
 /* Exemple avec une fonction de test*/
-void creation_thread(INFO* I);
+INFO creation_thread(INFO I);
 
 void *encrypt(void *arg);
