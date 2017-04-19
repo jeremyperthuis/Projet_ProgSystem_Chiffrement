@@ -10,7 +10,6 @@ typedef struct info{
 	int decalage;
 	char sens;
 	char message[MAX_CARACTERE];
-	int TUBE[2];
 	int position;
 }INFO;
 

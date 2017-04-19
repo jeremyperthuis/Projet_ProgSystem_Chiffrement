@@ -96,7 +96,9 @@ void creation_processus(TABinfo* t, int nb_msg)
 		if(pid==0) // on est dans les fils
 		{
 			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
+			
 			tmp.Inf[nb_msg]=creation_thread(tmp.Inf[i]);
+			
 			printf("messagecod: %s\n",tmp.Inf[nb_msg].message);
 			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
 			exit(getpid());
@@ -147,9 +149,9 @@ void *encrypt(void *arg)
 	int pos=tmp.position;
 	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || (tmp.message[pos]>=97 && tmp.message[pos]<=122))
 	{
-		*(char*) arg.message[pos]+=3;
-		//printf("%c",*(char*)arg);
-		arg.message++;
+		//*arg->message[pos]+=3;
+		//printf("THREAD TEST / %c",arg->message[pos]);
+		//arg.message++;
 	}
 
 	pthread_exit(NULL);

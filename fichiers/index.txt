@@ -1,2 +1,3 @@
 fichiers/msg1.txt;5;c
 fichiers/msg2.txt;12;c
+fichiers/msg3.txt;3;c
