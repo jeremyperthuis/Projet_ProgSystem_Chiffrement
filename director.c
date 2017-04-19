@@ -93,11 +93,10 @@ void creation_processus(TABinfo* t, int nb_msg)
 	pid_t pid, status;
 	int i,j;
 	TABinfo tmp = *t;
-	TABinfo tmp2= tmp;
 
-	char messageRecu[MAX_CARACTERE]; 
-	int descripteurTube[2]; // parametre du pipe
-	pipe(descripteurTube);
+	//char messageRecu[MAX_CARACTERE]; 
+	//int descripteurTube[2]; // parametre du pipe
+	//pipe(descripteurTube);
 	
 
 	for(i =0;i<nb_msg;i++)
@@ -113,11 +112,11 @@ void creation_processus(TABinfo* t, int nb_msg)
 			
 			creation_thread(tmp.Inf[i]);
 			
-			printf("messagecod: %s\n",tmp.Inf[nb_msg].message);
-			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
+			
+			//write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
 			exit(getpid());
 		}
-
+/*
 		if(pid>0)
 		{
 			read(descripteurTube[0],messageRecu,MAX_CARACTERE);
@@ -129,13 +128,14 @@ void creation_processus(TABinfo* t, int nb_msg)
 			}
 			printf("tmp : %s\n",tmp.Inf[nb_msg].message);
 		}
+*/
 	}
 
 	for(i=0;i<nb_msg;i++)
 	{
 		wait(&status);
 	}
-	//printTABinfo(t,nb_msg);
+	
 }
 
 
@@ -159,35 +159,58 @@ TABinfo recupere_message(TABinfo t, int nb_msg)
 
 void *encrypt(void *arg)
 {
+	// On copie le contenu pour faciliter la manipulation des données
 	INFO tmp= *(INFO*)arg;
 	int pos=tmp.position;
+
+	//
 	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || (tmp.message[pos]>=97 && tmp.message[pos]<=122))
 	{
+		// On creer un pointeur qui pointe sur l'agrument de la fonction pour faciliter les manipulations
 		INFO* test= (INFO*)arg;
-		test->message[pos]+=tmp.decalage;
+
+		// Si c'est une majuscule et si le decalage depasse la liste
+		if((tmp.message[pos]>=65 && tmp.message[pos]<=90)&& 
+			(test->message[pos]+tmp.decalage)>90 )
+
+			test->message[pos]-=(26-tmp.decalage);
+		
+		// Si c'est une minuscule et si le decalage depasse la liste
+		else if((tmp.message[pos]>=97 && tmp.message[pos]<=122)&& 
+				(test->message[pos]+tmp.decalage)>122 )
+
+			test->message[pos]-=(26-tmp.decalage);
+
+		//si c'est une lettre et si le decalage ne depasse pas la liste
+		else
+			test->message[pos]+=tmp.decalage;
+
 		tmp.message[pos++];
-
 	}
-
 	pthread_exit(NULL);
 }
 
+int calculDecalage(int decalage)
+{
 
-INFO creation_thread(INFO I)
+}
+
+void creation_thread(INFO I)
 {	
 	INFO tmp = I;
 	tmp.position=0;
-	printf("position:%d\n",tmp.position);
+	//printf("position:%d\n",tmp.position);
 
 	int i=0;
 	int nb_thread=tmp.decalage;
 
+
 	while(tmp.message[i]!='\0')
 	{
-		printf("i=%d\n",i);
 		int sym = tmp.message[i];
 
-		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122)) // si c'est une lettre
+		// si le caractere est une lettre
+		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
 		{
 			pthread_t mythread;
 			
@@ -202,10 +225,10 @@ INFO creation_thread(INFO I)
 			{
 
 			}
-				
+			i++;	
 			pthread_join(mythread,NULL);
 			
-			// cette boucle permet d'avancer jusqu'au prochain mot
+			// cette boucle permet d'avancer juste après la fin du mot
 			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
 			{
 
@@ -215,10 +238,42 @@ INFO creation_thread(INFO I)
 			}
 		}
 
+		// si le caractere n'est pas une lettre
 		else
 			i++;
 			tmp.position++;
-	
 	}
-	printINFO(tmp);
+
+	printf("message codé : %s\n",tmp.message);
+	nouveau_fichier(tmp);
+}
+
+void nouveau_fichier(INFO i)
+{
+	int cpt=0;
+	char tmp[256];
+
+	// permet de trouver le "." dans le path original
+	while(i.path[cpt]!='.')
+	{
+		tmp[cpt]=i.path[cpt];
+		cpt++;
+	}
+
+	// on remplace le "." par le suffixe "_cypher.txt" 
+	tmp[cpt]='\0';
+	strcat(tmp,"_cypher.txt");
+
+	// permet de compter le nombre de caractere a ecrire dans le msg
+	cpt=0;
+	
+	while(i.message[cpt]!='\0')
+	{
+		cpt++;
+	}
+
+	// creation et ecriture du fichier
+	int fd=open(tmp,O_CREAT | O_WRONLY,S_IRWXU);
+	write(fd,&i.message,cpt);
+	close(fd);
 }
