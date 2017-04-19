@@ -30,6 +30,9 @@ TABinfo decoupage(char* argv,int* nb_msg);
 /* Permet d'afficher le contenu de la structure TABinfo */
 void printTABinfo(TABinfo cc, int nb_msg);
 
+/* Permet d'afficher le contenu de la structure INFO */
+void printINFO(INFO i);
+
 /* Crée nb_msg processus */
 void creation_processus(TABinfo* t, int nb_msg);
 
@@ -37,6 +40,6 @@ void creation_processus(TABinfo* t, int nb_msg);
 TABinfo recupere_message(TABinfo t, int nb_msg);
 
 /* Exemple avec une fonction de test*/
-INFO creation_thread(INFO I);
+creation_thread(INFO I);
 
 void *encrypt(void *arg);

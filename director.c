@@ -62,7 +62,7 @@ TABinfo decoupage(char* argv, int* nb_msg)
 
 void printTABinfo(TABinfo cc, int nb_msg)
 {
-	printf("\n******************************\n\n");
+	printf("\n*************TABINFO*****************\n\n");
 	for(int i=0;i<nb_msg;i++)
 	{
 		printf("TABinfo[%d].path: %s\n",i,cc.Inf[0].path);
@@ -74,12 +74,26 @@ void printTABinfo(TABinfo cc, int nb_msg)
 	printf("******************************\n");
 }
 
+void printINFO(INFO i)
+{
+	printf("\n*************INFO*****************\n\n");
+	
+	{
+		printf("path: %s\n",i.path);
+		printf("decalage: %d\n",i.decalage);
+		printf("sens: %c\n",i.sens);
+		printf("message: %s\n\n",i.message);
+	}
+	printf("******************************\n");
+}
+
+
 void creation_processus(TABinfo* t, int nb_msg)
 {
 	pid_t pid, status;
 	int i,j;
 	TABinfo tmp = *t;
-	INFO tmp2;
+	TABinfo tmp2= tmp;
 
 	char messageRecu[MAX_CARACTERE]; 
 	int descripteurTube[2]; // parametre du pipe
@@ -97,7 +111,7 @@ void creation_processus(TABinfo* t, int nb_msg)
 		{
 			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
 			
-			tmp.Inf[nb_msg]=creation_thread(tmp.Inf[i]);
+			creation_thread(tmp.Inf[i]);
 			
 			printf("messagecod: %s\n",tmp.Inf[nb_msg].message);
 			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
@@ -121,7 +135,7 @@ void creation_processus(TABinfo* t, int nb_msg)
 	{
 		wait(&status);
 	}
-	printTABinfo(tmp,nb_msg);
+	//printTABinfo(t,nb_msg);
 }
 
 
@@ -149,9 +163,10 @@ void *encrypt(void *arg)
 	int pos=tmp.position;
 	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || (tmp.message[pos]>=97 && tmp.message[pos]<=122))
 	{
-		//*arg->message[pos]+=3;
-		//printf("THREAD TEST / %c",arg->message[pos]);
-		//arg.message++;
+		INFO* test= (INFO*)arg;
+		test->message[pos]+=tmp.decalage;
+		tmp.message[pos++];
+
 	}
 
 	pthread_exit(NULL);
@@ -175,17 +190,22 @@ INFO creation_thread(INFO I)
 		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122)) // si c'est une lettre
 		{
 			pthread_t mythread;
+			
+			// si on doit encrypter
 			if(tmp.sens=='c')
 			{
 				pthread_create(&mythread, NULL,encrypt,&tmp);
 			}
+
+			// si on doit decrypter
 			else if(tmp.sens=='d')
 			{
 
 			}
 				
 			pthread_join(mythread,NULL);
-
+			
+			// cette boucle permet d'avancer jusqu'au prochain mot
 			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
 			{
 
@@ -200,5 +220,5 @@ INFO creation_thread(INFO I)
 			tmp.position++;
 	
 	}
-	return tmp;
+	printINFO(tmp);
 }
