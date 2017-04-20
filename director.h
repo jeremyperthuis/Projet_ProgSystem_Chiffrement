@@ -6,11 +6,11 @@
 
 
 typedef struct info{
-	char path[256];
-	int decalage;
-	char sens;
-	char message[MAX_CARACTERE];
-	int position;
+	char path[256]; // chemin du fichier
+	int decalage;	
+	char sens;		// c:chiffrement d:dechiffrement
+	char message[MAX_CARACTERE]; // le message
+	int position;	// connaitre la position dans le msg 
 }INFO;
 
 typedef struct TABinfo{
@@ -48,6 +48,7 @@ void creation_thread(INFO I);
 /*	Permet d'encrypter le message */
 void *encrypt(void *arg);
 
+
 /*	Facilite la decalage de lettre dans la table ascii 
 	en cas de grand decalage*/
-int calculDecalage(int decalage);
+int calculDecalage(int decalage, int position);

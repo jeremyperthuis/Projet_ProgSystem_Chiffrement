@@ -94,9 +94,9 @@ void creation_processus(TABinfo* t, int nb_msg)
 	int i,j;
 	TABinfo tmp = *t;
 
-	//char messageRecu[MAX_CARACTERE]; 
-	//int descripteurTube[2]; // parametre du pipe
-	//pipe(descripteurTube);
+	char messageRecu[MAX_CARACTERE]; 
+	int descripteurTube[2]; // parametre du pipe
+	pipe(descripteurTube);
 	
 
 	for(i =0;i<nb_msg;i++)
@@ -108,27 +108,27 @@ void creation_processus(TABinfo* t, int nb_msg)
 		
 		if(pid==0) // on est dans les fils
 		{
-			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
+			printf("on est dans le fils n°%d , message = %s stop message\n",i,t->Inf[i].message);
 			
 			creation_thread(tmp.Inf[i]);
 			
 			
-			//write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
+			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
 			exit(getpid());
 		}
-/*
+
 		if(pid>0)
 		{
 			read(descripteurTube[0],messageRecu,MAX_CARACTERE);
-			printf("message_recu:%s\n",messageRecu);
+			//printf("message_recu:%s\n",messageRecu);
 
 			for(j=0;j<MAX_CARACTERE;j++)
 			{
 				tmp.Inf[nb_msg].message[j]=messageRecu[j];
 			}
-			printf("tmp : %s\n",tmp.Inf[nb_msg].message);
+			//printf("tmp : %s\n",tmp.Inf[nb_msg].message);
 		}
-*/
+
 	}
 
 	for(i=0;i<nb_msg;i++)
@@ -162,37 +162,65 @@ void *encrypt(void *arg)
 	// On copie le contenu pour faciliter la manipulation des données
 	INFO tmp= *(INFO*)arg;
 	int pos=tmp.position;
+	char sens=tmp.sens;
 
-	//
-	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || (tmp.message[pos]>=97 && tmp.message[pos]<=122))
+
+	// Tant que le mot contient que des lettres
+	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || 
+		(tmp.message[pos]>=97 && tmp.message[pos]<=122))
 	{
-		// On creer un pointeur qui pointe sur l'agrument de la fonction pour faciliter les manipulations
+		// On creer un pointeur qui pointe sur l'argument de la fonction pour faciliter les manipulations
 		INFO* test= (INFO*)arg;
-
-		// Si c'est une majuscule et si le decalage depasse la liste
-		if((tmp.message[pos]>=65 && tmp.message[pos]<=90)&& 
-			(test->message[pos]+tmp.decalage)>90 )
-
-			test->message[pos]-=(26-tmp.decalage);
-		
-		// Si c'est une minuscule et si le decalage depasse la liste
-		else if((tmp.message[pos]>=97 && tmp.message[pos]<=122)&& 
-				(test->message[pos]+tmp.decalage)>122 )
-
-			test->message[pos]-=(26-tmp.decalage);
-
-		//si c'est une lettre et si le decalage ne depasse pas la liste
-		else
-			test->message[pos]+=tmp.decalage;
-
+		test->message[pos]=calculDecalage(tmp.decalage,test->message[pos]);
 		tmp.message[pos++];
 	}
+
 	pthread_exit(NULL);
 }
 
-int calculDecalage(int decalage)
-{
 
+
+int calculDecalage(int decalage, int position)
+{
+	
+	// si le decalage est grand
+	if(decalage >= 26)
+	{
+		decalage = decalage%26;
+	}
+
+	// Si c'est une majuscule
+	if(position>=65 && position<=90)
+	{
+		// si le decalage depase de la liste des majuscules
+		if((decalage+position)>90)
+		{
+			position -=(26-decalage);
+		}
+
+		// si le decalage ne depasse pas de la liste des majuscules
+		else if((decalage+position)<=90)
+		{
+			position+=decalage;
+		}
+	}
+	//si c'est une minuscule
+	else if(position<=122 && position>=97)
+	{
+		// si le decalage depase de la liste des minuscules
+		if((decalage+position)>122)
+		{
+			position -=(26-decalage);
+		}
+
+		// si le decalage ne depasse pas de la liste des minuscules
+		else if((decalage+position)<=122)
+		{
+			position+=decalage;
+		}
+	}
+
+	return position;
 }
 
 void creation_thread(INFO I)
@@ -214,24 +242,13 @@ void creation_thread(INFO I)
 		{
 			pthread_t mythread;
 			
-			// si on doit encrypter
-			if(tmp.sens=='c')
-			{
-				pthread_create(&mythread, NULL,encrypt,&tmp);
-			}
-
-			// si on doit decrypter
-			else if(tmp.sens=='d')
-			{
-
-			}
+			pthread_create(&mythread, NULL,encrypt,&tmp);
 			i++;	
 			pthread_join(mythread,NULL);
 			
 			// cette boucle permet d'avancer juste après la fin du mot
 			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
 			{
-
 				i++;
 				tmp.position++;
 				sym = tmp.message[i];
@@ -244,7 +261,7 @@ void creation_thread(INFO I)
 			tmp.position++;
 	}
 
-	printf("message codé : %s\n",tmp.message);
+	printf("message codé : %sstop codé\n",tmp.message);
 	nouveau_fichier(tmp);
 }
 
