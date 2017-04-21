@@ -12,50 +12,68 @@
 
 TABinfo decoupage(char* argv, int* nb_msg)
 {
-	/*On recupere l'index dans un buffer*/
+	// Ce buffer stocke tout le contenu de index.txt
 	char buf[MAX_FICHIERS*64];
 	int fd1=open(argv,O_RDONLY);
 	read(fd1,&buf,MAX_FICHIERS*64);
 	
+
 	TABinfo temp;
 	
+	
 	char c;
+	// stocke le decalage 
 	char decaltemp[16];
 	
 	int i=0, j=0, nb=0;
 	
-	while((c=buf[i])!='\0')
-	{		
-		if(c==';')	// on atteint le premier ';'
-		{	
+	// Tant qu'on arrive pas a la fin de index.txt
+	c=buf[i];
+	while((c != '\0'))
+	{	
+		// Tant qu'on atteint pas la fin du path
+		while (c!=';')
+		{
+			temp.Inf[nb].path[j]=c;
 			i++;
-			
-			temp.Inf[nb].path[j]='\0';
-			j=0;
-
- 			while((c=buf[i])!=';') 
- 			{
- 				decaltemp[j]=c;
- 				j++;
- 				i++;
- 			}
-
- 			decaltemp[j]='\0';
- 			temp.Inf[nb].decalage=atoi(decaltemp);
- 			i++;
- 			c=buf[i];
- 			temp.Inf[nb].sens=c;
- 			i+=2;
- 			nb++;
- 			j=0;
- 			c=buf[i];
+			j++;
+			c=buf[i];
 		}
-
-		temp.Inf[nb].path[j]=c;
-		j++;
+		temp.Inf[nb].path[j+1]='\0';
+		
 		i++;
+		j=0;
+		c=buf[i];
+
+		// Tant qu'on atteint pas la fin du decalage
+		while(c!=';')	
+		{
+			decaltemp[j]=c;
+			i++;
+			j++;
+			c=buf[i];
+		}
+		decaltemp[j+1]='\0';
+		//conversion des char en int
+		temp.Inf[nb].decalage=atoi(decaltemp);
+		j=0;
+		i++;
+		c=buf[i];
+		temp.Inf[nb].sens=c;
+		i++;
+		c=buf[i];
+		if(c==10)
+		{	
+			nb++;
+			printf("chariot\n");
+			i++;
+			c=buf[i];
+		}
 	}
+
+	// on renvoi le nombre de lignes lues par pointeur
 	*nb_msg=nb;
+
 	return temp;
 }
 
@@ -65,7 +83,7 @@ void printTABinfo(TABinfo cc, int nb_msg)
 	printf("\n*************TABINFO*****************\n\n");
 	for(int i=0;i<nb_msg;i++)
 	{
-		printf("TABinfo[%d].path: %s\n",i,cc.Inf[0].path);
+		printf("TABinfo[%d].path: %s\n",i,cc.Inf[i].path);
 		printf("TABinfo[%d].decalage: %d\n",i,cc.Inf[i].decalage);
 		printf("TABinfo[%d].sens: %c\n",i,cc.Inf[i].sens);
 		printf("TABinfo[%d].message: %s\n\n",i,cc.Inf[i].message);
@@ -108,7 +126,7 @@ void creation_processus(TABinfo* t, int nb_msg)
 		
 		if(pid==0) // on est dans les fils
 		{
-			printf("on est dans le fils n°%d , message = %s stop message\n",i,t->Inf[i].message);
+			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
 			
 			creation_thread(tmp.Inf[i]);
 			
@@ -142,17 +160,19 @@ void creation_processus(TABinfo* t, int nb_msg)
 TABinfo recupere_message(TABinfo t, int nb_msg)
 {
 	int i;
+	int fd[nb_msg];	
 	for(i=0;i<nb_msg;i++)
 	{
-		char buf[MAX_CARACTERE];
-		int fd1=open(t.Inf[i].path,O_RDONLY);
-		read(fd1,&buf,MAX_CARACTERE);
+		char buf[MAX_CARACTERE]="";
+		fd[i]=open(t.Inf[i].path,O_RDONLY);
+		read(fd[i],&buf,MAX_CARACTERE);
 		int j=0;
 		while(buf[j]!='\0')
 		{
 			t.Inf[i].message[j]=buf[j];
 			j++;
 		}
+		close(fd[i]);
 	}
 	return t;
 }
@@ -164,14 +184,13 @@ void *encrypt(void *arg)
 	int pos=tmp.position;
 	char sens=tmp.sens;
 
-
 	// Tant que le mot contient que des lettres
 	while((tmp.message[pos]>=65 && tmp.message[pos]<=90) || 
 		(tmp.message[pos]>=97 && tmp.message[pos]<=122))
 	{
 		// On creer un pointeur qui pointe sur l'argument de la fonction pour faciliter les manipulations
 		INFO* test= (INFO*)arg;
-		test->message[pos]=calculDecalage(tmp.decalage,test->message[pos]);
+		test->message[pos]=calculDecalage(tmp.decalage,test->message[pos],sens);
 		tmp.message[pos++];
 	}
 
@@ -180,46 +199,86 @@ void *encrypt(void *arg)
 
 
 
-int calculDecalage(int decalage, int position)
+int calculDecalage(int decalage, int position, char sens)
 {
-	
+	                
 	// si le decalage est grand
 	if(decalage >= 26)
 	{
 		decalage = decalage%26;
 	}
 
-	// Si c'est une majuscule
-	if(position>=65 && position<=90)
+	if(sens=='c')
 	{
-		// si le decalage depase de la liste des majuscules
-		if((decalage+position)>90)
-		{
-			position -=(26-decalage);
-		}
 
-		// si le decalage ne depasse pas de la liste des majuscules
-		else if((decalage+position)<=90)
+		// Si c'est une majuscule
+		if(position>=65 && position<=90)
 		{
-			position+=decalage;
+			// si le decalage depase de la liste des majuscules
+			if((decalage+position)>90)
+			{
+				position -=(26-decalage);
+			}
+
+			// si le decalage ne depasse pas de la liste des majuscules
+			else if((decalage+position)<=90)
+			{
+				position+=decalage;
+			}
+		}
+		//si c'est une minuscule
+		else if(position<=122 && position>=97)
+		{
+			// si le decalage depase de la liste des minuscules
+			if((decalage+position)>122)
+			{
+				position -=(26-decalage);
+			}
+
+			// si le decalage ne depasse pas de la liste des minuscules
+			else if((decalage+position)<=122)
+			{
+				position+=decalage;
+			}
 		}
 	}
-	//si c'est une minuscule
-	else if(position<=122 && position>=97)
-	{
-		// si le decalage depase de la liste des minuscules
-		if((decalage+position)>122)
-		{
-			position -=(26-decalage);
-		}
 
-		// si le decalage ne depasse pas de la liste des minuscules
-		else if((decalage+position)<=122)
+	// Si on veut decrypter
+	else if (sens=='d')
+	{
+
+		// Si c'est une majuscule
+		if(position>=65 && position<=90)
 		{
-			position+=decalage;
+			// si le decalage depase de la liste des majuscules
+			if((position-decalage)<65)
+			{
+				position +=(26-decalage);
+			}
+
+			// si le decalage ne depasse pas de la liste des majuscules
+			else if((position-decalage)>=65)
+			{
+				position-=decalage;
+			}
+		}
+		//si c'est une minuscule
+		else if(position<=122 && position>=97)
+		{
+			// si le decalage depase de la liste des minuscules
+			if((position-decalage)<97)
+			{
+				position +=(26-decalage);
+			}
+
+			// si le decalage ne depasse pas de la liste des minuscules
+			else if((position-decalage)>=97)
+			{
+				position-=decalage;
+			}
 		}
 	}
-
+		
 	return position;
 }
 
@@ -261,7 +320,7 @@ void creation_thread(INFO I)
 			tmp.position++;
 	}
 
-	printf("message codé : %sstop codé\n",tmp.message);
+	printf("	message codé : %s\n",tmp.message);
 	nouveau_fichier(tmp);
 }
 

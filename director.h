@@ -51,4 +51,4 @@ void *encrypt(void *arg);
 
 /*	Facilite la decalage de lettre dans la table ascii 
 	en cas de grand decalage*/
-int calculDecalage(int decalage, int position);
+int calculDecalage(int decalage, int position, char sens);
