@@ -1,4 +1,4 @@
 fichiers/msg1.txt;5;c
-fichiers/msg2.txt;3;c
-fichiers/msg3.txt;7;c
+fichiers/msg2.txt;67;c
+fichiers/msg3.txt;734577;d
 fichiers/msg4.txt;5;d

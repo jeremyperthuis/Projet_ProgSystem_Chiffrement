@@ -10,7 +10,7 @@ typedef struct info{
 	int decalage;	
 	char sens;		// c:chiffrement d:dechiffrement
 	char message[MAX_CARACTERE]; // le message
-	int position;	// connaitre la position dans le msg 
+	int position;	// connaitre la position dans le msg (utile pour les thread)
 }INFO;
 
 typedef struct TABinfo{
@@ -33,18 +33,18 @@ void printTABinfo(TABinfo cc, int nb_msg);
 /* 	Crée nb_msg processus */
 void creation_processus(TABinfo* t, int nb_msg);
 
-/*Crée un nouveau fichier et écrit le message codé*/
+/*Crée un nouveau fichier et écrit le message encrypté*/
 void nouveau_fichier(INFO i);
 
 /* 	Recupere les messages des fichiers et les copie dans la structure TABinfo*/
 TABinfo recupere_message(TABinfo t, int nb_msg);
 
-/* 	Calcul le nombre de mot valide et crée autant de thread que de mots du fichier*/
+/* 	Invoque autant de thread que de mots reconnus dans le message*/
 void creation_thread(INFO I,int nf);
 
 /*	Permet d'encrypter ou decrypter le message */
 void *encrypt(void *arg);
 
-/*	Facilite la decalage de lettre dans la table ascii 
-	en cas de grand decalage*/
+/*	Renvoi le decalage necessaire pour l'encryptage ou desencryptage,
+	et gere aussi les grand decalage  */
 int calculDecalage(int decalage, int position, char sens);

@@ -59,6 +59,9 @@ TABinfo decoupage(char* argv, int* nb_msg)
 		j=0;
 		i++;
 		c=buf[i];
+		// si le sens n'est pas reconnu
+		if(c!='c' && c!='d') printf("Erreur sens incorect !\n");
+
 		temp.Inf[nb].sens=c;
 		i++;
 		c=buf[i];
@@ -67,7 +70,6 @@ TABinfo decoupage(char* argv, int* nb_msg)
 		if(c==10)
 		{	
 			nb++;
-			printf("chariot\n");
 			i++;
 			c=buf[i];
 		}
@@ -91,7 +93,7 @@ void printTABinfo(TABinfo cc, int nb_msg)
 		printf("TABinfo[%d].message: %s\n\n",i,cc.Inf[i].message);
 		
 	}
-	printf("******************************\n");
+	printf("****************************************************\n");
 }
 
 
@@ -118,11 +120,23 @@ void creation_processus(TABinfo* t, int nb_msg)
 		
 		if(pid==0) // on est dans les fils
 		{
-			printf("Processus n°%d , message à traiter : %s\n",i,t->Inf[i].message);
+			printf("****************************************************\n");
+			printf("MESSAGE N°%d\n\ndecalage : %d\nmessage à traiter : \n\n%s\n",
+					i+1,t->Inf[i].decalage,t->Inf[i].message);
+
+			// Si le mot est vide
+			if(strlen(t->Inf[i].message)==0)
+			{
+				printf("ERREUR : PAS DE MESSAGE A TRAITER !\n");
+			}
+			
+			
 			
 			creation_thread(tmp.Inf[i],i);
 
 			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
+
+			
 			exit(getpid());
 		}
 
@@ -137,6 +151,7 @@ void creation_processus(TABinfo* t, int nb_msg)
 		}
 
 	}
+	printf("****************************************************\n");
 	// on attent la fin des processus fils
 	for(i=0;i<nb_msg;i++)
 	{
@@ -145,9 +160,71 @@ void creation_processus(TABinfo* t, int nb_msg)
 	
 }
 
+void creation_thread(INFO I, int nf)
+{	
+	INFO tmp = I;
+	tmp.position=0;
+	
+
+	int i=0;
+	//compte le nombre de thread invoqué
+	int nb_thread=0;
+
+	// Tant que l'on atteint pas la fin du message
+	while(tmp.message[i]!='\0')
+	{
+		int sym = tmp.message[i];
+
+		// si le caractere est une lettre
+		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
+		{
+			pthread_t mythread;
+			
+			pthread_create(&mythread, NULL,encrypt,&tmp);
+			nb_thread++;
+			i++;	
+			pthread_join(mythread,NULL);
+			
+			// cette boucle permet d'avancer juste après la fin du mot
+			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
+			{
+				i++;
+				tmp.position++;
+				sym = tmp.message[i];
+			}
+		}
+
+		// si le caractere n'est pas une lettre
+		else
+			i++;
+			tmp.position++;
+	}
+
+	if(tmp.sens=='c')
+	{
+		// si le message est non vide
+		if(strlen(tmp.message))
+		{
+			printf(" -> Le message chiffré a été écrit dans le fichier msg%d_cypher.txt\n\n",nf+1);
+			nouveau_fichier(tmp);
+		}
+	}
+
+	else if(tmp.sens=='d')
+	{
+		// si le message est non vide
+		if(strlen(tmp.message))
+		{
+			printf(" -> message dechiffré : \n\n%s\n",tmp.message);
+		}
+	}
+	printf("[Processus n°%d : %d thread(s) crée(s)]\n",nf,nb_thread);
+}
+
 
 TABinfo recupere_message(TABinfo t, int nb_msg)
 {
+	printf("\nNombre de message à traiter :%d\n\n",nb_msg);
 	int i;
 	int fd[nb_msg];	
 	for(i=0;i<nb_msg;i++)
@@ -155,9 +232,9 @@ TABinfo recupere_message(TABinfo t, int nb_msg)
 		char buf[MAX_CARACTERE]="";
 		
 		fd[i]=open(t.Inf[i].path,O_RDONLY);
-		if(fd[i]==-1) printf("erreur ouverture fichier %s\n",t.Inf[i].path);
+		if(fd[i]==-1) printf("erreur ouverture fichier ! %s\n",t.Inf[i].path);
 
-		if(read(fd[i],&buf,MAX_CARACTERE)==0) printf("message vide\n");
+		if(read(fd[i],&buf,MAX_CARACTERE)==0) printf("Erreur message n°%d vide !\n",i+1);
 		close(fd[i]);
 
 		int j=0;
@@ -276,53 +353,7 @@ int calculDecalage(int decalage, int position, char sens)
 	return position;
 }
 
-void creation_thread(INFO I, int nf)
-{	
-	INFO tmp = I;
-	tmp.position=0;
-	//printf("position:%d\n",tmp.position);
 
-	int i=0;
-	int nb_thread=tmp.decalage;
-
-	// Tant que l'on atteint pas la fin du message
-	while(tmp.message[i]!='\0')
-	{
-		int sym = tmp.message[i];
-
-		// si le caractere est une lettre
-		if((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
-		{
-			pthread_t mythread;
-			
-			pthread_create(&mythread, NULL,encrypt,&tmp);
-			i++;	
-			pthread_join(mythread,NULL);
-			
-			// cette boucle permet d'avancer juste après la fin du mot
-			while((sym>=65 && sym<=90)||(sym>=97 && sym <= 122))
-			{
-				i++;
-				tmp.position++;
-				sym = tmp.message[i];
-			}
-		}
-
-		// si le caractere n'est pas une lettre
-		else
-			i++;
-			tmp.position++;
-	}
-	if(tmp.sens=='c')
-	{
-		printf("	Le message chiffré a été écrit dans le fichier msg%d_cypher.txt\n\n",nf);
-		nouveau_fichier(tmp);
-	}
-	else if(tmp.sens=='d')
-	{
-		printf("	message dechiffré : %s\n",tmp.message);
-	}
-}
 
 void nouveau_fichier(INFO i)
 {
