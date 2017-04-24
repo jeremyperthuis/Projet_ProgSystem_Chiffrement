@@ -15,16 +15,14 @@ TABinfo decoupage(char* argv, int* nb_msg)
 	// Ce buffer stocke tout le contenu de index.txt
 	char buf[MAX_FICHIERS*64];
 	int fd1=open(argv,O_RDONLY);
+	if (fd1==-1) printf("erreur open index.txt\n");
 	read(fd1,&buf,MAX_FICHIERS*64);
-	
+	close(fd1);
 
 	TABinfo temp;
-	
-	
 	char c;
-	// stocke le decalage 
-	char decaltemp[16];
-	
+	// on stocke le decalage dans un tableau de char avant de le convertir 
+	char decaltemp[16]="";
 	int i=0, j=0, nb=0;
 	
 	// Tant qu'on arrive pas a la fin de index.txt
@@ -54,14 +52,18 @@ TABinfo decoupage(char* argv, int* nb_msg)
 			c=buf[i];
 		}
 		decaltemp[j+1]='\0';
-		//conversion des char en int
+		//conversion du decalage en int
 		temp.Inf[nb].decalage=atoi(decaltemp);
+		if(temp.Inf[nb].decalage <= 0) printf("erreur decalage incorect\n");
+
 		j=0;
 		i++;
 		c=buf[i];
 		temp.Inf[nb].sens=c;
 		i++;
 		c=buf[i];
+
+		// si on rencontre le symbole de retour a la ligne
 		if(c==10)
 		{	
 			nb++;
@@ -92,29 +94,19 @@ void printTABinfo(TABinfo cc, int nb_msg)
 	printf("******************************\n");
 }
 
-void printINFO(INFO i)
-{
-	printf("\n*************INFO*****************\n\n");
-	
-	{
-		printf("path: %s\n",i.path);
-		printf("decalage: %d\n",i.decalage);
-		printf("sens: %c\n",i.sens);
-		printf("message: %s\n\n",i.message);
-	}
-	printf("******************************\n");
-}
 
 
 void creation_processus(TABinfo* t, int nb_msg)
 {
+	if(nb_msg==0) printf("aucun message à traiter\n");
 	pid_t pid, status;
 	int i,j;
 	TABinfo tmp = *t;
 
+
 	char messageRecu[MAX_CARACTERE]; 
 	int descripteurTube[2]; // parametre du pipe
-	pipe(descripteurTube);
+	if(pipe(descripteurTube)==-1) printf("erreur pipe\n");
 	
 
 	for(i =0;i<nb_msg;i++)
@@ -126,11 +118,10 @@ void creation_processus(TABinfo* t, int nb_msg)
 		
 		if(pid==0) // on est dans les fils
 		{
-			printf("on est dans le fils n°%d , message = %s\n",i,t->Inf[i].message);
+			printf("Processus n°%d , message à traiter : %s\n",i,t->Inf[i].message);
 			
-			creation_thread(tmp.Inf[i]);
-			
-			
+			creation_thread(tmp.Inf[i],i);
+
 			write(descripteurTube[1],tmp.Inf[nb_msg].message,MAX_CARACTERE);
 			exit(getpid());
 		}
@@ -138,17 +129,15 @@ void creation_processus(TABinfo* t, int nb_msg)
 		if(pid>0)
 		{
 			read(descripteurTube[0],messageRecu,MAX_CARACTERE);
-			//printf("message_recu:%s\n",messageRecu);
 
 			for(j=0;j<MAX_CARACTERE;j++)
 			{
 				tmp.Inf[nb_msg].message[j]=messageRecu[j];
 			}
-			//printf("tmp : %s\n",tmp.Inf[nb_msg].message);
 		}
 
 	}
-
+	// on attent la fin des processus fils
 	for(i=0;i<nb_msg;i++)
 	{
 		wait(&status);
@@ -164,15 +153,19 @@ TABinfo recupere_message(TABinfo t, int nb_msg)
 	for(i=0;i<nb_msg;i++)
 	{
 		char buf[MAX_CARACTERE]="";
+		
 		fd[i]=open(t.Inf[i].path,O_RDONLY);
-		read(fd[i],&buf,MAX_CARACTERE);
+		if(fd[i]==-1) printf("erreur ouverture fichier %s\n",t.Inf[i].path);
+
+		if(read(fd[i],&buf,MAX_CARACTERE)==0) printf("message vide\n");
+		close(fd[i]);
+
 		int j=0;
 		while(buf[j]!='\0')
 		{
 			t.Inf[i].message[j]=buf[j];
 			j++;
 		}
-		close(fd[i]);
 	}
 	return t;
 }
@@ -208,6 +201,7 @@ int calculDecalage(int decalage, int position, char sens)
 		decalage = decalage%26;
 	}
 
+	// si on veut crypter
 	if(sens=='c')
 	{
 
@@ -282,7 +276,7 @@ int calculDecalage(int decalage, int position, char sens)
 	return position;
 }
 
-void creation_thread(INFO I)
+void creation_thread(INFO I, int nf)
 {	
 	INFO tmp = I;
 	tmp.position=0;
@@ -291,7 +285,7 @@ void creation_thread(INFO I)
 	int i=0;
 	int nb_thread=tmp.decalage;
 
-
+	// Tant que l'on atteint pas la fin du message
 	while(tmp.message[i]!='\0')
 	{
 		int sym = tmp.message[i];
@@ -319,9 +313,15 @@ void creation_thread(INFO I)
 			i++;
 			tmp.position++;
 	}
-
-	printf("	message codé : %s\n",tmp.message);
-	nouveau_fichier(tmp);
+	if(tmp.sens=='c')
+	{
+		printf("	Le message chiffré a été écrit dans le fichier msg%d_cypher.txt\n\n",nf);
+		nouveau_fichier(tmp);
+	}
+	else if(tmp.sens=='d')
+	{
+		printf("	message dechiffré : %s\n",tmp.message);
+	}
 }
 
 void nouveau_fichier(INFO i)

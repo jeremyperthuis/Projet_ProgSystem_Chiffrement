@@ -30,9 +30,6 @@ TABinfo decoupage(char* argv,int* nb_msg);
 /* Permet d'afficher le contenu de la structure TABinfo */
 void printTABinfo(TABinfo cc, int nb_msg);
 
-/* Permet d'afficher le contenu de la structure INFO */
-void printINFO(INFO i);
-
 /* 	Crée nb_msg processus */
 void creation_processus(TABinfo* t, int nb_msg);
 
@@ -42,12 +39,11 @@ void nouveau_fichier(INFO i);
 /* 	Recupere les messages des fichiers et les copie dans la structure TABinfo*/
 TABinfo recupere_message(TABinfo t, int nb_msg);
 
-/* 	Exemple avec une fonction de test*/
-void creation_thread(INFO I);
+/* 	Calcul le nombre de mot valide et crée autant de thread que de mots du fichier*/
+void creation_thread(INFO I,int nf);
 
-/*	Permet d'encrypter le message */
+/*	Permet d'encrypter ou decrypter le message */
 void *encrypt(void *arg);
-
 
 /*	Facilite la decalage de lettre dans la table ascii 
 	en cas de grand decalage*/
